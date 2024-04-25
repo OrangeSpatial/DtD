@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import DragToDrop from './components/DragToDrop.vue'
-import { computed, ref, toRaw } from 'vue'
-import { DtdNode } from './model/DtdNode.ts'
-import DtdItem from './components/DtdItem.vue'
-import DtdList from './components/DtdList.vue'
+import { ref } from 'vue'
+import Dtd from './components/Dtd.vue';
 
 const data = ref([
   {
@@ -35,35 +32,16 @@ const data = ref([
   }
 ])
 
-const dragNodes = new DtdNode({
-  children: toRaw(data.value),
-})
-
-console.log(dragNodes)
-
 </script>
 
 <template>
   <div class="title">TEST DTD</div>
   <hr/>
-  <DragToDrop :root="dragNodes.root">
-    <dtd-list v-if="dragNodes.children.length" :list="dragNodes.children">
-      <template #default="{ item }">
-        {{ item.droppable }}
-        <dtd-item :data="item" :key="item.id">
-          <div>{{ item.props.name}}</div>
-          <dtd-list v-if="item.children.length" :list="item.children">
-            <template #default="{ item }">
-              <dtd-item :data="item" :key="item.id">
-                <div>{{ item.props.name}}</div>
-              </dtd-item>
-            </template>
-          </dtd-list>
-        </dtd-item>
-      </template>
-    </dtd-list>
-  </DragToDrop>
-
+  <Dtd v-model="data">
+    <template #default="{ item }">
+      <div>{{ item.props?.name }}</div>
+    </template>
+  </Dtd>
 </template>
 
 <style scoped>

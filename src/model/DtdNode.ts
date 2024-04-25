@@ -27,6 +27,7 @@ export class DtdNode {
   depth = 0;
   dragId!: string;
   droppable = false;
+  disabled = false;
   props: IDtdNode['props'] = {};
   children: DtdNode[] = [];
 
@@ -50,6 +51,20 @@ export class DtdNode {
       this.children = (node?.children || []).map((child) => new DtdNode(child, this));
     }
     TreeNodes.set(this.dragId, this);
+  }
+
+  static fromList(list: any[]) {
+    const nodeList = list.map((node) => new DtdNode(node));
+    return new DtdNode({children: nodeList});
+  }
+
+  static toList(node: DtdNode): any[]{
+    return node.children.map((child) => {
+      return {
+        ...child.props,
+        children: DtdNode.toList(child)
+      };
+    });
   }
 }
 

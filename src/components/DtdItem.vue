@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 import { DragToDropItemProps } from '../types'
 
-const props = defineProps<DragToDropItemProps>()
+defineProps<DragToDropItemProps>()
 
 onMounted(() => {
   console.log('DragToDrop mounted')
@@ -11,7 +11,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div :data-dtd-id="disabled ? undefined : data.dragId" class="drag-to-drop-item">
+  <div
+  :data-dtd-id="disabled ? undefined : data.dragId"
+  class="drag-to-drop-item"
+  :class="{ 'drag-disabled': disabled }"
+  >
     <slot></slot>
   </div>
 </template>
@@ -21,5 +25,8 @@ onMounted(() => {
   padding: 10px;
   border: 1px solid #ccc;
   background-color: white;
+}
+.drag-disabled {
+  opacity: 0.5;
 }
 </style>
