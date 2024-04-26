@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useCursor } from '../hooks/cursorHook.ts'
-import { CSSProperties, onMounted, ref } from 'vue'
-import { DragEventType, ICursorPosition } from '../model/Mouse.ts'
+import { CSSProperties, onBeforeUnmount, onMounted, ref } from 'vue'
+import { DragEventType } from '../model/Mouse.ts'
 import { DtdNode } from '../model/DtdNode.ts'
 import { getClosestDtdNode, getCursorPositionInDtdNode } from '../utils/dtdHelper.ts'
 
@@ -29,14 +29,18 @@ const droppingCoverRectStyle = ref<CSSProperties>({
 const { mouse } = useCursor()
 const currentTargetNode = ref<DtdNode>()
 
-function draggingHandler(e: MouseEvent, targetNode: DtdNode, position: ICursorPosition) {
-  // console.log('mouseMoveHandler', e, targetNode, position)
-  currentTargetNode.value = targetNode
+function draggingHandler(e: MouseEvent, targetNode?: DtdNode) {
+  
   const positionObj = getCursorPositionInDtdNode(e)
-  if (!positionObj) return
+  if (!positionObj || !targetNode) {
+    resetInsertionStyle()
+    resetDraggingCoverRectStyle()
+    resetDroppingCoverRectStyle()
+    return
+  }
+  currentTargetNode.value = targetNode
   const { isTop, rect } = positionObj
   const y = isTop ? rect.top : rect.top + rect.height
-  if (!targetNode) return
   if (!targetNode.droppable) {
     updateInsertionStyle(rect, y)
     resetDroppingCoverRectStyle()
@@ -114,8 +118,7 @@ function resetDroppingCoverRectStyle() {
 }
 
 
-function dragEndHandler(e: MouseEvent, targetNode: DtdNode, position: ICursorPosition) {
-  // console.log('dragEndHandler', e, targetNode, position)
+function dragEndHandler(e: MouseEvent, targetNode?: DtdNode) {
   resetInsertionStyle()
   resetDraggingCoverRectStyle()
   currentTargetNode.value = undefined
@@ -126,6 +129,10 @@ onMounted(() => {
   mouse.on(DragEventType.DragEnd, dragEndHandler)
 })
 
+onBeforeUnmount(() => {
+  mouse.off(DragEventType.Dragging, draggingHandler)
+  mouse.off(DragEventType.DragEnd, dragEndHandler)
+})
 </script>
 
 <template>
@@ -152,6 +159,7 @@ onMounted(() => {
 
 .dtd-aux-insertion {
   position: absolute;
+  pointer-events: none;
   transform: perspective(1px);
   background-color: #00bebe;
 }

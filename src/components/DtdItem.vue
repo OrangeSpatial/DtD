@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { DragToDropItemProps } from '../types'
 
 defineProps<DragToDropItemProps>()
-
-onMounted(() => {
-  console.log('DragToDrop mounted')
-})
-
 </script>
 
 <template>

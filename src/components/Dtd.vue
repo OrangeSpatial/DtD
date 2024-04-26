@@ -1,48 +1,26 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { DtdNode } from '../model/DtdNode';
-import DtdItem from './DtdItem.vue';
-
+import { DtdNode } from "../model/DtdNode";
+import DtdItem from "./DtdItem.vue";
 
 defineOptions({
-    name: 'DtD',
-})
+  name: "DtD",
+});
 
-const props = withDefaults(defineProps<{
-    modelValue: Array<any>,
-}>(), {})
-
-const emits = defineEmits<{
-    (event: 'update:modelValue', value: Array<any>): void
-}>()
-
-const dtdData = computed({
-    get: () => {
-        return DtdNode.fromList(props.modelValue)
-    },
-    set: (value) => {
-        console.log(value);
-        emits('update:modelValue', DtdNode.toList(value))
-    }
-})
-
-
-console.log(dtdData.value);
-
+withDefaults(
+  defineProps<{
+    node: DtdNode;
+  }>(),
+  {}
+);
 </script>
 
 <template>
-    <dtd-item
-        v-for="item in dtdData.children"
-        :data="item"
-        :disabled="item.disabled"
-    >
-        <slot :item="item">
-        </slot>
-        <Dtd v-if="item.children?.length" v-model="item.children">
-            <template #default="{ item: cItem }">
-                <slot :item="cItem"></slot>
-            </template>
-        </Dtd>
-    </dtd-item>
+  <dtd-item v-for="n in node.children" :data="n" :disabled="n.disabled">
+    <slot :item="n"></slot>
+    <DtD v-if="n.children?.length" :node="n">
+      <template #default="{ item: cItem }">
+        <slot :item="cItem"></slot>
+      </template>
+    </DtD>
+  </dtd-item>
 </template>

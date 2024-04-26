@@ -1,5 +1,5 @@
-import { DtdNode, getClosetDroppableNode, getNode, insertNode, NodeInPosition } from './DtdNode.ts'
-import { getClosestDtdNode, getCursorPositionInDtdNode } from '../utils/dtdHelper.ts'
+import { DtdNode, getNode } from './DtdNode.ts'
+import { getClosestDtdNode, removeGhostElStyle, setMoveElStyle } from '../utils/dtdHelper.ts'
 import { isValidNumber } from '../utils/types.ts'
 
 export enum CursorStatus {
@@ -83,7 +83,7 @@ export class Mouse {
   startEvent: MouseEvent = new MouseEvent('')
   startTime: number = 0
 
-  dragPositionChangeCallbacks = new Map<string, ((e: MouseEvent, targetNode: DtdNode, position: ICursorPosition) => void)[]>()
+  dragPositionChangeCallbacks = new Map<string, ((e: MouseEvent, targetNode?: DtdNode) => void)[]>()
 
   node: DtdNode | null = null
 
@@ -101,6 +101,12 @@ export class Mouse {
     this.node = node;
   }
 
+  public setGhostElement(ghostElement: HTMLElement): void {
+    if (!ghostElement) return;
+    this.ghostElement && this.ghostElement.remove();
+    this.ghostElement = ghostElement;
+  }
+
   public setDragStatus(status: CursorStatus | string): void {
     this.dragStatus = status;
   }
@@ -115,22 +121,22 @@ export class Mouse {
 
   public setCursorPosition(position: ICursorPosition): void {
     this.position = position;
-    if (this.dragElement) {
-      this.ghostElement.style.left = `${position.clientX}px`;
-      this.ghostElement.style.top = `${position.clientY}px`;
+    if (this.dragElement && this.ghostElement) {
+      setMoveElStyle(this.ghostElement, position);
     }
   }
 
-  on(eventType: DragEventType, callback: (e: MouseEvent, targetNode: DtdNode, position: ICursorPosition) => void) {
+  on(eventType: DragEventType, callback: (e: MouseEvent, targetNode?: DtdNode) => void) {
     if (!eventType || !callback) return;
     if (this.dragPositionChangeCallbacks.has(eventType)) {
+      if (this.dragPositionChangeCallbacks.get(eventType)?.includes(callback)) return;
       this.dragPositionChangeCallbacks.get(eventType)?.push(callback);
     } else {
       this.dragPositionChangeCallbacks.set(eventType, [callback]);
     }
   }
 
-  off(eventType: DragEventType, callback: (e: MouseEvent, targetNode: DtdNode, position: ICursorPosition) => void) {
+  off(eventType: DragEventType, callback: (e: MouseEvent, targetNode: DtdNode) => void) {
     if (!eventType || !callback) return;
     if (this.dragPositionChangeCallbacks.has(eventType)) {
       const callbacks = this.dragPositionChangeCallbacks.get(eventType);
@@ -152,7 +158,6 @@ export class Mouse {
 
   onDragStart(e: MouseEvent) {
     if (this.dragStatus === CursorStatus.Dragging) return;
-    console.log('dragStart', e);
     this.setDragStatus(CursorStatus.Dragging);
     this.setDragStartPosition({
       pageX: e.pageX,
@@ -165,8 +170,6 @@ export class Mouse {
     const dragElement = getClosestDtdNode(e)
     if (dragElement) {
       this.dragElement = dragElement;
-      // 设置拖拽元素
-      this.ghostElement.append(dragElement?.cloneNode(true));
     }
     // 设置数据
     const dragId = dragElement?.getAttribute('data-dtd-id');
@@ -176,7 +179,7 @@ export class Mouse {
       if (node) {
         this.dataTransfer = node;
         this.dragPositionChangeCallbacks.get(DragEventType.DragStart)?.forEach((cb) => {
-          cb(e, node, this.position);
+          cb(e, node);
         });
       }
     }
@@ -189,17 +192,13 @@ export class Mouse {
       clientX: e.clientX,
       clientY: e.clientY,
     });
-    // 判断鼠标在哪个元素上，且在元素上的位置：上、下、左、右
+
     const target = getClosestDtdNode(e) as HTMLElement;
-    if (target) {
-      const dragId = target.getAttribute('data-dtd-id') as string;
-      const targetNode = getNode(dragId);
-      if (targetNode)  {
-        this.dragPositionChangeCallbacks.get(DragEventType.Dragging)?.forEach((cb) => {
-          cb(e, targetNode, this.position);
-        });
-      }
-    }
+    const dragId = target?.getAttribute('data-dtd-id') as string;
+    const targetNode = getNode(dragId);
+    this.dragPositionChangeCallbacks.get(DragEventType.Dragging)?.forEach((cb) => {
+      cb(e, targetNode);
+    });
   }
 
   onDragEnd(e: MouseEvent) {
@@ -213,31 +212,14 @@ export class Mouse {
     });
     // 设置样式
     setCursorStyle(window, CursorDragType.Auto)
-    const currentTargetEl = getClosestDtdNode(e);
-    const dragId = currentTargetEl?.getAttribute('data-dtd-id') as string;
-    const targetNode = getNode(dragId);
-    // 如果在容器上，直接追加，如果不在容器内，查找上级容器,并计算插入位置
-    if (this.dragElement) {
-      if (targetNode?.droppable) {
-        currentTargetEl.append(this.dragElement.cloneNode(true));
-        // 更新节点
-        targetNode.children.push(new DtdNode({...targetNode, dragId: ''}, targetNode))
-        console.log(targetNode.root);
-      } else {
-        const positionObj = getCursorPositionInDtdNode(e)
-        if (positionObj && targetNode) {
-          const dragType = targetNode.root === this.dataTransfer?.root ? DragNodeType.MOVE : DragNodeType.COPY;
-          insertNode(targetNode, this.dataTransfer as DtdNode, positionObj.insertBefore, dragType)
-
-          const dragEL = dragType === DragNodeType.MOVE ? this.dragElement : this.dragElement.cloneNode(true);
-          if (positionObj.insertBefore) {
-            currentTargetEl.before(dragEL);
-          } else {
-            currentTargetEl.after(dragEL);
-          }
-        }
-      }
+    // 事件
+    this.dragPositionChangeCallbacks.get(DragEventType.DragEnd)?.forEach((cb) => {
+      const dragId = getClosestDtdNode(e)?.getAttribute('data-dtd-id') as string;
+      const targetNode = getNode(dragId);
+      cb(e, targetNode);
+    });
       // 移除拖拽元素
+    if (this.dragElement) {
       this.dragElement = null;
     }
 
@@ -245,15 +227,8 @@ export class Mouse {
       this.dataTransfer = null;
     }
     if (this.ghostElement) {
-      this.ghostElement.innerHTML = '';
+      removeGhostElStyle(this.ghostElement);
     }
-    this.dragPositionChangeCallbacks.get(DragEventType.DragEnd)?.forEach((cb) => {
-      const dragId = getClosestDtdNode(e)?.getAttribute('data-dtd-id') as string;
-      const targetNode = getNode(dragId);
-      if (targetNode) {
-        cb(e, targetNode, this.position);
-      }
-    });
   }
 
   public move = (e: MouseEvent) =>  {
@@ -265,18 +240,14 @@ export class Mouse {
   }
 
   public down = (e: MouseEvent) => {
-    console.log('down', e);
     this.startEvent = e;
     this.startTime = Date.now();
-    // 监听鼠标移动事件和鼠标抬起事件
     document.addEventListener('mousemove', this.move);
     document.addEventListener('mouseup', this.up);
   }
 
   public up = (e: MouseEvent) => {
-    console.log('up', e);
     this.onDragEnd(e);
-    // 移除鼠标移动事件和鼠标抬起事件
     document.removeEventListener('mousemove', this.move);
     document.removeEventListener('mouseup', this.up);
   }

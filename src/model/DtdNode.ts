@@ -1,11 +1,13 @@
 import { nanoid } from 'nanoid'
 import { DragNodeType } from './Mouse.ts'
+import { isValueInEnum } from '../utils/enum.ts';
 
 interface IDtdNode {
   dragId?: string;
   droppable?: boolean;
+  dragType?: DragNodeType;
   props?: Record<string | number | symbol, any>;
-  children: (DtdNode | any)[];
+  children: IDtdNode[];
 }
 
 export enum NodeInPosition {
@@ -26,6 +28,7 @@ export class DtdNode {
   parent!: DtdNode;
   depth = 0;
   dragId!: string;
+  dragType!: DragNodeType;
   droppable = false;
   disabled = false;
   props: IDtdNode['props'] = {};
@@ -48,14 +51,15 @@ export class DtdNode {
     if (node) {
       this.props = node.props || node;
       if (node.droppable) this.droppable = node.droppable;
+      if (node.dragType && isValueInEnum(node.dragType, DragNodeType)) this.dragType = node.dragType;
+      else this.dragType = DragNodeType.MOVE;
       this.children = (node?.children || []).map((child) => new DtdNode(child, this));
     }
     TreeNodes.set(this.dragId, this);
   }
 
-  static fromList(list: any[]) {
-    const nodeList = list.map((node) => new DtdNode(node));
-    return new DtdNode({children: nodeList});
+  static fromList(list: IDtdNode[]) {
+    return new DtdNode({children: list});
   }
 
   static toList(node: DtdNode): any[]{
@@ -72,6 +76,7 @@ export class DtdNode {
 export function deleteNode(node: DtdNode) {
   const parent = node.parent || node;
   parent.children = parent.children.filter((child) => child !== node);
+  TreeNodes.delete(node.dragId);
 }
 
 /**
@@ -96,8 +101,26 @@ export function insertNode(targetNode: DtdNode, sourceNode: DtdNode, insertBefor
   }
 }
 
+/**
+ * 插入到容器
+ * @param targetNode 
+ * @param sourceNode 
+ * @param insertBefore 
+ * @param type 
+ * @returns 
+ */
+export function insertNodeInContainer(targetNode: DtdNode, sourceNode: DtdNode, insertBefore: boolean, type: DragNodeType) {
+  if (!targetNode || !sourceNode) return;
+  const newNode = new DtdNode({...sourceNode, dragId: ''}, targetNode)
+  insertBefore ? targetNode.children.unshift(newNode) : targetNode.children.push(newNode);
+  if (type === DragNodeType.MOVE) {
+    // 删除原节点
+    deleteNode(sourceNode);
+  }
+}
+
 export function getNode(dragId: string) {
-  if (!TreeNodes.has(dragId)) return null;
+  if (!TreeNodes.has(dragId)) return undefined;
   return TreeNodes.get(dragId);
 }
 

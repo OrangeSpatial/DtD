@@ -1,8 +1,8 @@
+import { ICursorPosition } from "../model/Mouse"
 
 export function getClosestDtdNode(e: MouseEvent) {
   // 拖拽内元素
   const target = e.target as HTMLElement
-  // 最近的含有data-dtd-id属性的元素
   return target.closest('[data-dtd-id]') as HTMLElement
 }
 
@@ -24,4 +24,19 @@ export function getCursorPositionInDtdNode(e: MouseEvent) {
     isBottom,
     insertBefore: isTop && isLeft,
   }
+}
+
+export function setMoveElStyle(el: HTMLElement, position: ICursorPosition) {
+  if(!el) return
+  const { clientX, clientY } = position
+  el.style.height = 'auto'
+  el.style.width = 'auto'
+  el.style.transform = `perspective(1px) translate3d(${clientX}px, ${clientY}px, 0)`
+}
+
+export function removeGhostElStyle(el: HTMLElement) {
+  if(!el) return
+  el.style.height = '0'
+  el.style.width = '0'
+  el.style.transform = `perspective(1px) translate3d(0, 0, 0)`
 }
