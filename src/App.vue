@@ -48,7 +48,13 @@ function getData() {
       <div class="ghost-custom">{{ item?.name }}</div>
     </template>
   </DragToDrop>
-  <button @click="getData"> getData </button>
+  
+  <h1>渲染数据：</h1>
+  <div class="code">
+    <code>
+      <pre>{{ data }}</pre>
+    </code>
+  </div>
 </template>
 
 <style scoped>
@@ -62,5 +68,11 @@ function getData() {
   border: 1px solid #ccc;
   padding: 5px;
   border-radius: 5px;
+}
+
+.code {
+  margin-top: 20px;
+  background-color: #f0f0f0;
+  padding: 10px;
 }
 </style>

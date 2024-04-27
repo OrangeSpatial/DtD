@@ -88,7 +88,7 @@ export class Mouse {
   node: DtdNode | null = null
 
   constructor() {
-    // 设置拖拽元素
+    // 设置默认拖拽元素
     const ghostElement = document.createElement('div');
     ghostElement.style.position = 'absolute';
     ghostElement.style.zIndex = '9999';
@@ -158,6 +158,8 @@ export class Mouse {
 
   onDragStart(e: MouseEvent) {
     if (this.dragStatus === CursorStatus.Dragging) return;
+    const dragElement = getClosestDtdNode(e)
+    if (!dragElement) return;
     this.setDragStatus(CursorStatus.Dragging);
     this.setDragStartPosition({
       pageX: e.pageX,
@@ -167,10 +169,7 @@ export class Mouse {
     });
     // 设置样式
     setCursorStyle(window, CursorDragType.Grabbing);
-    const dragElement = getClosestDtdNode(e)
-    if (dragElement) {
-      this.dragElement = dragElement;
-    }
+    this.dragElement = dragElement;
     // 设置数据
     const dragId = dragElement?.getAttribute('data-dtd-id');
     if (dragId) {
@@ -186,6 +185,7 @@ export class Mouse {
   }
   onDragMove(e: MouseEvent) {
     if (this.dragStatus !== CursorStatus.Dragging) return;
+    e.preventDefault();
     this.setCursorPosition({
       pageX: e.pageX,
       pageY: e.pageY,
@@ -232,7 +232,6 @@ export class Mouse {
   }
 
   public move = (e: MouseEvent) =>  {
-    e.preventDefault();
     if (this.isValidDragStart(e)) {
       this.onDragStart(e);
       this.onDragMove(e);
