@@ -154,4 +154,9 @@ onBeforeUnmount(() => {
   background-color: rgba(0, 147, 251, 0.1);
   transform: perspective(1px) translateZ(0);
 }
+
+.dtd-aux-cover-rect.dragging {
+  box-sizing: border-box;
+  border: 1px solid #0093fb;
+}
 </style>

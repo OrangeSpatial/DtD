@@ -9,13 +9,19 @@ defineOptions({
 withDefaults(
   defineProps<{
     node: DtdNode;
+    key: string;
   }>(),
   {}
 );
 </script>
 
 <template>
-  <dtd-item v-for="n in node.children" :data="n" :disabled="n.disabled">
+  <dtd-item
+    v-for="n in node.children"
+    :key="n.props?.[key] || n.dragId"
+    :data="n"
+    :disabled="n.disabled"
+  >
     <slot :item="n"></slot>
     <DtD v-if="n.children?.length" :node="n">
       <template #default="{ item: cItem }">

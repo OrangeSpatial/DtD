@@ -14,7 +14,10 @@ defineOptions({
 
 const props = withDefaults(defineProps<{
   modelValue: any[]
-}>(), {})
+  key: string
+}>(), {
+  key: 'id'
+})
 const emits = defineEmits<{
   (event: 'update:modelValue', value: Array<any>): void
 }>()
@@ -58,6 +61,13 @@ onBeforeUnmount(() => {
   mouse.off(DragEventType.DragEnd, dragEndHandler)
 })
 
+function init() {
+  if(!props.key && !props.modelValue?.[0].id) {
+    console.error('DragToDrop: key is required')
+  }
+}
+
+init()
 </script>
 
 <template>
