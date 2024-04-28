@@ -10,6 +10,7 @@ withDefaults(
   defineProps<{
     node: DtdNode;
     key: string;
+    nodeClass?: string;
   }>(),
   {}
 );
@@ -17,13 +18,14 @@ withDefaults(
 
 <template>
   <dtd-item
+    :class="nodeClass ? nodeClass : ''"
     v-for="n in node.children"
     :key="n.props?.[key] || n.dragId"
     :data="n"
     :disabled="n.disabled"
   >
     <slot :item="n"></slot>
-    <DtD v-if="n.children?.length" :node="n">
+    <DtD :nodeClass v-if="n.children?.length" :node="n">
       <template #default="{ item: cItem }">
         <slot :item="cItem"></slot>
       </template>

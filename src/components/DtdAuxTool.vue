@@ -2,7 +2,7 @@
 import { useCursor } from '../hooks/cursorHook.ts'
 import { CSSProperties, onBeforeUnmount, onMounted, ref } from 'vue'
 import { DragEventType } from '../model/Mouse.ts'
-import { DtdNode } from '../model/DtdNode.ts'
+import { DtdNode, NodeLayout } from '../model/DtdNode.ts'
 import { cursorAtContainerEdge, getCursorPositionInDtdNode } from '../common/dtdHelper.ts'
 import { initStyle } from '../common/presets.ts'
 
@@ -31,20 +31,21 @@ function draggingHandler(e: MouseEvent, targetNode?: DtdNode) {
     return
   }
   currentTargetNode.value = targetNode
-  const { isTop, rect } = positionObj
+  const { isTop, isLeft, rect } = positionObj
+  const isVertical = targetNode.nodeInLayout === NodeLayout.VERTICAL
   // TODO: 根据布局判断，默认垂直布局
   const d_x = e.pageX - e.clientX
   const d_y = e.pageY - e.clientY
   const left = d_x + rect.left
   const top = d_y + rect.top
-  const x = left
-  const y = isTop ? top : top + rect.height
+  const x = isVertical ? left : isLeft ? left : left + rect.width
+  const y = isVertical ? isTop ? top : top + rect.height : top
   if (targetNode.droppable && !cursorAtContainerEdge(rect, e)) {
     // 在可放置的容器内
     resetInsertionStyle()
-    updateDroppingCoverRectStyle(rect, x, y)
+    updateDroppingCoverRectStyle(rect, left, top)
   } else {
-    updateInsertionStyle(rect, x, y)
+    updateInsertionStyle(rect, x, y, isVertical)
     resetDroppingCoverRectStyle()
   }
 
@@ -54,14 +55,13 @@ function draggingHandler(e: MouseEvent, targetNode?: DtdNode) {
   } else {
     resetDraggingCoverRectStyle()
   }
-
 }
 
-function updateInsertionStyle(rect: DOMRect, x: number, y: number) {
+function updateInsertionStyle(rect: DOMRect, x: number, y: number, vertical: boolean) {
   insertionStyle.value = {
     transform: `perspective(1px) translate3d(${x}px,${y}px,0px)`,
-    width: rect.width + 'px',
-    height: '2px'
+    width: vertical ? rect.width + 'px' : '2px',
+    height: vertical ? '2px' : rect.height + 'px'
   }
 }
 
@@ -157,6 +157,6 @@ onBeforeUnmount(() => {
 
 .dtd-aux-cover-rect.dragging {
   box-sizing: border-box;
-  border: 1px solid #0093fb;
+  border: 1px solid #0092fbe1;
 }
 </style>

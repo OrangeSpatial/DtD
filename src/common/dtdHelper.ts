@@ -14,8 +14,8 @@ export function getCursorPositionInDtdNode(e: MouseEvent) {
   const { clientX, clientY } = e
   const { left, top, width, height } = rect
   const isTop = clientY < top + height / 2
-  const isLeft = clientX < left + width / 2
-  const isRight = clientX > left + width / 2
+  const isLeft = clientX < left + width / 3
+  const isRight = clientX > left + width / 3
   const isBottom = clientY > top + height / 2
   return {
     rect,
@@ -29,6 +29,7 @@ export function getCursorPositionInDtdNode(e: MouseEvent) {
 
 export function cursorAtContainerEdge(rect: DOMRect, e: MouseEvent) {
   return (e.clientY - rect.top < edgeGap) || (rect.top + rect.height - e.clientY  < edgeGap)
+  || (e.clientX - rect.left < edgeGap) || (rect.left + rect.width - e.clientX < edgeGap)
 }
 
 export function setMoveElStyle(el: HTMLElement, position: ICursorPosition) {

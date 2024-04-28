@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DtdNode, insertNode, insertNodeInContainer } from '../model/DtdNode.ts'
+import { DtdNode, NodeLayout, insertNode, insertNodeInContainer } from '../model/DtdNode.ts'
 import { initCursor } from '../hooks/cursorHook.ts'
 import DtdAuxTool from './DtdAuxTool.vue'
 import Dtd from './Dtd.vue'
@@ -15,6 +15,7 @@ defineOptions({
 const props = withDefaults(defineProps<{
   modelValue: any[]
   key: string
+  nodeClass?: string
 }>(), {
   key: 'id'
 })
@@ -39,17 +40,19 @@ function dragEndHandler(e: MouseEvent, targetNode?: DtdNode) {
   if (!targetNode || !sourceNode || !positionObj || !mouse.dragElement) return
   const dragType = sourceNode.dragType
   const isContainerEdge = cursorAtContainerEdge(positionObj.rect, e)
+  const isVertical = targetNode.nodeInLayout === NodeLayout.VERTICAL
+  const insertBefore = isVertical ? positionObj.insertBefore : positionObj.isLeft
   if (targetNode?.droppable && !isContainerEdge) {
-    insertNodeInContainer(targetNode, sourceNode, positionObj.insertBefore, dragType)
+    insertNodeInContainer(targetNode, sourceNode, insertBefore, dragType)
   } else {
-    insertNode(targetNode, sourceNode, positionObj.isTop, dragType)
+    insertNode(targetNode, sourceNode, isVertical ? positionObj.isTop : positionObj.isLeft, dragType)
   }
   dtdData.value = targetNode.root
 }
 
 const carryNode = ref<DtdNode>()
 
-mouse.on(DragEventType.DragStart, (e, node) => {
+mouse.on(DragEventType.DragStart, () => {
   carryNode.value = mouse.dataTransfer as DtdNode
 })
 
@@ -71,7 +74,7 @@ init()
 </script>
 
 <template>
-  <Dtd :node="dtdData">
+  <Dtd :key="key" :nodeClass :node="dtdData">
     <template #default="{ item }">
       <slot :item="item" />
     </template>

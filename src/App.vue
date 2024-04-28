@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import type { Component } from 'vue'
 import Tree from './demo/Tree.vue'
+import Horizon from './demo/Horizon.vue'
 
 const components = ref<{
   title: string
@@ -10,6 +11,10 @@ const components = ref<{
   {
     title: 'Tree Demo',
     component: Tree
+  },
+  {
+    title: 'Horizon Demo',
+    component: Horizon
   }
 ])
 
@@ -58,6 +63,7 @@ const currentComponent = computed(() => {
   display: flex;
   flex-direction: column;
   padding: 24px 10px;
+  gap: 10px;
 }
 
 .demo-item {

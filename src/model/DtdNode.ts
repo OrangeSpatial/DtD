@@ -20,6 +20,11 @@ export enum NodeInPosition {
   TOP_LEFT = 'top_left'
 }
 
+export enum NodeLayout {
+  VERTICAL = 'vertical',
+  HORIZONTAL = 'horizontal'
+}
+
 const TreeNodes = new Map<string, DtdNode>();
 
 export class DtdNode {
@@ -32,6 +37,7 @@ export class DtdNode {
   disabled = false;
   props: IDtdNode['props'] = {};
   children: DtdNode[] = [];
+  nodeInLayout: NodeLayout = NodeLayout.VERTICAL
 
   constructor(node: IDtdNode, parent?: DtdNode) {
     if (node instanceof DtdNode) {
@@ -55,6 +61,10 @@ export class DtdNode {
       this.children = (node?.children || []).map((child) => new DtdNode(child, this));
     }
     TreeNodes.set(this.dragId, this);
+  }
+
+  setNodeInLayout(layout: NodeLayout) {
+    this.nodeInLayout = layout;
   }
 
   static fromList(list: IDtdNode[]) {

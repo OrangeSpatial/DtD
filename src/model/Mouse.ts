@@ -203,6 +203,8 @@ export class Mouse {
   }
 
   onDragEnd(e: MouseEvent) {
+    // 设置样式
+    setCursorStyle(window, CursorDragType.Auto)
     if (this.dragStatus !== CursorStatus.Dragging) return;
     this.setDragStatus(CursorStatus.Normal);
     this.setDragEndPosition({
@@ -211,8 +213,6 @@ export class Mouse {
       clientX: e.clientX,
       clientY: e.clientY,
     });
-    // 设置样式
-    setCursorStyle(window, CursorDragType.Auto)
     // 事件
     this.dragPositionChangeCallbacks.get(DragEventType.DragEnd)?.forEach((cb) => {
       const dragId = getClosestDtdNode(e)?.getAttribute(DTD_BASE_KEY) as string;
