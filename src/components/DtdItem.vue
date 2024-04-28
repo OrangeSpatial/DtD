@@ -1,14 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { DragToDropItemProps } from '../types'
-
-defineProps<DragToDropItemProps>()
+import { DTD_BASE_KEY } from '../common/presets';
+const props = defineProps<DragToDropItemProps>()
+const customProps = computed( () => {
+  return {
+    [DTD_BASE_KEY]: props.disabled ? undefined : props.data.dragId
+  }
+})
 </script>
 
 <template>
   <div
-  :data-dtd-id="disabled ? undefined : data.dragId"
+  v-bind="customProps"
   class="drag-to-drop-item"
-  :class="{ 'drag-disabled': disabled }"
+  :class="{
+    'drag-disabled': disabled
+  }"
   >
     <slot></slot>
   </div>

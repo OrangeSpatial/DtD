@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 const ghostRef = ref<HTMLElement>()
 const emits = defineEmits(['mounted'])
+
 onMounted(() => {
   ghostRef.value && emits('mounted', ghostRef.value)
 })

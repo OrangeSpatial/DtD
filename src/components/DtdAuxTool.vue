@@ -3,34 +3,26 @@ import { useCursor } from '../hooks/cursorHook.ts'
 import { CSSProperties, onBeforeUnmount, onMounted, ref } from 'vue'
 import { DragEventType } from '../model/Mouse.ts'
 import { DtdNode } from '../model/DtdNode.ts'
-import { getClosestDtdNode, getCursorPositionInDtdNode } from '../utils/dtdHelper.ts'
+import { cursorAtContainerEdge, getCursorPositionInDtdNode } from '../common/dtdHelper.ts'
+import { initStyle } from '../common/presets.ts'
 
-const insertionStyle = ref<CSSProperties>({
-  top: '0',
-  left: '0',
-  width: '0',
-  height: '0'
+withDefaults(defineProps<{
+  insertionBgColor: string
+}>(), {
+  insertionBgColor: '#1890ff'
 })
 
-const draggingCoverRectStyle = ref<CSSProperties>({
-  top: '0',
-  left: '0',
-  width: '0',
-  height: '0'
-})
+const insertionStyle = ref<CSSProperties>()
 
-const droppingCoverRectStyle = ref<CSSProperties>({
-  top: '0',
-  left: '0',
-  width: '0',
-  height: '0'
-})
+const draggingCoverRectStyle = ref<CSSProperties>(initStyle)
+
+const droppingCoverRectStyle = ref<CSSProperties>(initStyle)
 
 const { mouse } = useCursor()
 const currentTargetNode = ref<DtdNode>()
 
 function draggingHandler(e: MouseEvent, targetNode?: DtdNode) {
-  
+
   const positionObj = getCursorPositionInDtdNode(e)
   if (!positionObj || !targetNode) {
     resetInsertionStyle()
@@ -40,54 +32,55 @@ function draggingHandler(e: MouseEvent, targetNode?: DtdNode) {
   }
   currentTargetNode.value = targetNode
   const { isTop, rect } = positionObj
-  const y = isTop ? rect.top : rect.top + rect.height
-  if (!targetNode.droppable) {
-    updateInsertionStyle(rect, y)
-    resetDroppingCoverRectStyle()
-  } else {
-    resetInsertionStyle()
+  // TODO: 根据布局判断，默认垂直布局
+  const d_x = e.pageX - e.clientX
+  const d_y = e.pageY - e.clientY
+  const left = d_x + rect.left
+  const top = d_y + rect.top
+  const x = left
+  const y = isTop ? top : top + rect.height
+  if (targetNode.droppable && !cursorAtContainerEdge(rect, e)) {
     // 在可放置的容器内
-    updateDroppingCoverRectStyle(getClosestDtdNode(e))
+    resetInsertionStyle()
+    updateDroppingCoverRectStyle(rect, x, y)
+  } else {
+    updateInsertionStyle(rect, x, y)
+    resetDroppingCoverRectStyle()
   }
 
-  // 同一来源的节点需要展示draggingCoverRect
-  if (targetNode.root === currentTargetNode.value.root) {
-    updateDraggingCoverRectStyle()
+  // same source should be a draggingCoverRect
+  if (targetNode.root === mouse.dataTransfer?.root) {
+    updateDraggingCoverRectStyle(d_x, d_y)
   } else {
     resetDraggingCoverRectStyle()
   }
 
 }
 
-function updateInsertionStyle(rect: DOMRect, y: number) {
+function updateInsertionStyle(rect: DOMRect, x: number, y: number) {
   insertionStyle.value = {
-    top: 0 + 'px',
-    left: 0 + 'px',
-    transform: `perspective(1px) translate3d(${rect.left}px,${y}px,0px)`,
+    transform: `perspective(1px) translate3d(${x}px,${y}px,0px)`,
     width: rect.width + 'px',
     height: '2px'
   }
 }
 
-function updateDraggingCoverRectStyle() {
+function updateDraggingCoverRectStyle(dx: number, dy: number) {
   const dragRect = mouse.dragElement?.getBoundingClientRect()
   if (dragRect) {
     draggingCoverRectStyle.value = {
-      transform: `perspective(1px) translate3d(${dragRect.left}px,${dragRect.top}px,0px)`,
+      transform: `perspective(1px) translate3d(${dx + dragRect.left}px,${dy + dragRect.top}px,0px)`,
       width: dragRect.width + 'px',
       height: dragRect.height + 'px'
     }
   }
 }
 
-function updateDroppingCoverRectStyle(el: HTMLElement) {
-  const dropRect = el?.getBoundingClientRect()
-  if (dropRect) {
-    droppingCoverRectStyle.value = {
-      transform: `perspective(1px) translate3d(${dropRect.left}px,${dropRect.top}px,0px)`,
-      width: dropRect.width + 'px',
-      height: dropRect.height + 'px'
-    }
+function updateDroppingCoverRectStyle(dropRect: DOMRect, x: number, y: number) {
+  droppingCoverRectStyle.value = {
+    transform: `perspective(1px) translate3d(${x}px,${y}px,0px)`,
+    width: dropRect.width + 'px',
+    height: dropRect.height + 'px'
   }
 }
 
@@ -100,25 +93,15 @@ function resetInsertionStyle() {
 }
 
 function resetDraggingCoverRectStyle() {
-  draggingCoverRectStyle.value = {
-    top: 0,
-    left: 0,
-    width: 0,
-    height: 0
-  }
+  draggingCoverRectStyle.value = initStyle
 }
 
 function resetDroppingCoverRectStyle() {
-  droppingCoverRectStyle.value = {
-    top: 0,
-    left: 0,
-    width: 0,
-    height: 0
-  }
+  droppingCoverRectStyle.value = initStyle
 }
 
 
-function dragEndHandler(e: MouseEvent, targetNode?: DtdNode) {
+function dragEndHandler() {
   resetInsertionStyle()
   resetDraggingCoverRectStyle()
   currentTargetNode.value = undefined
@@ -137,7 +120,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="dtd-aux-tool">
-    <div class="dtd-aux-insertion" :style="insertionStyle"></div>
+    <div class="dtd-aux-insertion"
+      :style="{...insertionStyle, backgroundColor: insertionBgColor}"
+    ></div>
     <div class="dtd-aux-dashed-box"></div>
     <div class="dtd-aux-selection-box"></div>
     <div v-if="mouse.dataTransfer" class="dtd-aux-cover-rect dragging" :style="draggingCoverRectStyle"></div>
@@ -157,15 +142,16 @@ onBeforeUnmount(() => {
 
 .dtd-aux-insertion {
   position: absolute;
+  top: 0;
+  left: 0;
   pointer-events: none;
   transform: perspective(1px);
-  background-color: #00bebe;
 }
 
 .dtd-aux-cover-rect {
   pointer-events: none;
   position: absolute;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 147, 251, 0.1);
   transform: perspective(1px) translateZ(0);
 }
 </style>

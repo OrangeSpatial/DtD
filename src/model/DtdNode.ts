@@ -1,6 +1,5 @@
-import { nanoid } from 'nanoid'
+import { uid } from '../common/uid.ts';
 import { DragNodeType } from './Mouse.ts'
-import { isValueInEnum } from '../utils/enum.ts';
 
 interface IDtdNode {
   dragId?: string;
@@ -38,7 +37,7 @@ export class DtdNode {
     if (node instanceof DtdNode) {
       return node;
     }
-    this.dragId = node.dragId || nanoid();
+    this.dragId = node.dragId || uid();
     if (parent) {
       this.depth = parent.depth + 1;
       this.parent = parent;
@@ -51,7 +50,7 @@ export class DtdNode {
     if (node) {
       this.props = node.props || node;
       if (node.droppable) this.droppable = node.droppable;
-      if (node.dragType && isValueInEnum(node.dragType, DragNodeType)) this.dragType = node.dragType;
+      if (node.dragType && Object.values(DragNodeType).includes(node.dragType)) this.dragType = node.dragType;
       else this.dragType = DragNodeType.MOVE;
       this.children = (node?.children || []).map((child) => new DtdNode(child, this));
     }

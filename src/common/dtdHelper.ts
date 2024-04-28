@@ -1,9 +1,10 @@
 import { ICursorPosition } from "../model/Mouse"
+import { DTD_BASE_KEY, edgeGap } from "./presets"
 
 export function getClosestDtdNode(e: MouseEvent) {
   // 拖拽内元素
   const target = e.target as HTMLElement
-  return target.closest('[data-dtd-id]') as HTMLElement
+  return target.closest(`[${DTD_BASE_KEY}]`) as HTMLElement
 }
 
 export function getCursorPositionInDtdNode(e: MouseEvent) {
@@ -26,12 +27,16 @@ export function getCursorPositionInDtdNode(e: MouseEvent) {
   }
 }
 
+export function cursorAtContainerEdge(rect: DOMRect, e: MouseEvent) {
+  return (e.clientY - rect.top < edgeGap) || (rect.top + rect.height - e.clientY  < edgeGap)
+}
+
 export function setMoveElStyle(el: HTMLElement, position: ICursorPosition) {
   if(!el) return
-  const { clientX, clientY } = position
+  const { pageX, pageY } = position
   el.style.height = 'auto'
   el.style.width = 'auto'
-  el.style.transform = `perspective(1px) translate3d(${clientX}px, ${clientY}px, 0)`
+  el.style.transform = `perspective(1px) translate3d(${pageX}px, ${pageY}px, 0)`
 }
 
 export function removeGhostElStyle(el: HTMLElement) {

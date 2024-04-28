@@ -6,7 +6,7 @@ import Dtd from './Dtd.vue'
 import DtdGhost from './DtdGhost.vue'
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { DragEventType } from '../model/Mouse';
-import { getCursorPositionInDtdNode } from '../utils/dtdHelper';
+import { cursorAtContainerEdge, getCursorPositionInDtdNode } from '../common/dtdHelper.ts';
 
 defineOptions({
   name: 'DragToDrop',
@@ -35,7 +35,8 @@ function dragEndHandler(e: MouseEvent, targetNode?: DtdNode) {
   carryNode.value = undefined
   if (!targetNode || !sourceNode || !positionObj || !mouse.dragElement) return
   const dragType = sourceNode.dragType
-  if (targetNode?.droppable) {
+  const isContainerEdge = cursorAtContainerEdge(positionObj.rect, e)
+  if (targetNode?.droppable && !isContainerEdge) {
     insertNodeInContainer(targetNode, sourceNode, positionObj.insertBefore, dragType)
   } else {
     insertNode(targetNode, sourceNode, positionObj.isTop, dragType)

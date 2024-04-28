@@ -1,6 +1,7 @@
 import { DtdNode, getNode } from './DtdNode.ts'
-import { getClosestDtdNode, removeGhostElStyle, setMoveElStyle } from '../utils/dtdHelper.ts'
-import { isValidNumber } from '../utils/types.ts'
+import { getClosestDtdNode, removeGhostElStyle, setMoveElStyle } from '../common/dtdHelper.ts'
+import { isValidNumber } from '../common/types.ts'
+import { DTD_BASE_KEY } from '../common/presets.ts'
 
 export enum CursorStatus {
   Normal = 'NORMAL',
@@ -171,7 +172,7 @@ export class Mouse {
     setCursorStyle(window, CursorDragType.Grabbing);
     this.dragElement = dragElement;
     // 设置数据
-    const dragId = dragElement?.getAttribute('data-dtd-id');
+    const dragId = dragElement?.getAttribute(DTD_BASE_KEY);
     if (dragId) {
       // 正在拖拽的node
       const node = getNode(dragId);
@@ -194,7 +195,7 @@ export class Mouse {
     });
 
     const target = getClosestDtdNode(e) as HTMLElement;
-    const dragId = target?.getAttribute('data-dtd-id') as string;
+    const dragId = target?.getAttribute(DTD_BASE_KEY) as string;
     const targetNode = getNode(dragId);
     this.dragPositionChangeCallbacks.get(DragEventType.Dragging)?.forEach((cb) => {
       cb(e, targetNode);
@@ -214,7 +215,7 @@ export class Mouse {
     setCursorStyle(window, CursorDragType.Auto)
     // 事件
     this.dragPositionChangeCallbacks.get(DragEventType.DragEnd)?.forEach((cb) => {
-      const dragId = getClosestDtdNode(e)?.getAttribute('data-dtd-id') as string;
+      const dragId = getClosestDtdNode(e)?.getAttribute(DTD_BASE_KEY) as string;
       const targetNode = getNode(dragId);
       cb(e, targetNode);
     });
@@ -232,6 +233,7 @@ export class Mouse {
   }
 
   public move = (e: MouseEvent) =>  {
+    e.preventDefault();
     if (this.isValidDragStart(e)) {
       this.onDragStart(e);
       this.onDragMove(e);
