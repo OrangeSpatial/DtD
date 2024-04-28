@@ -1,78 +1,84 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import DragToDrop from './components/DragToDrop.vue';
+import { computed, ref } from 'vue'
+import type { Component } from 'vue'
+import Tree from './demo/Tree.vue'
 
-const data = ref([
+const components = ref<{
+  title: string
+  component: Component
+}[]>([
   {
-    id: 12,
-    name: 'Input',
-  },
-  {
-    id: 13,
-    name: 'Button',
-  },
-  {
-    id: 14,
-    name: 'Card',
-    droppable: true,
-    children: [
-      {
-        id: 15,
-        name: 'CardHeader',
-      },
-      {
-        id: 16,
-        name: 'CardBody',
-      },
-      {
-        id: 17,
-        name: 'CardFooter',
-      },
-    ],
+    title: 'Tree Demo',
+    component: Tree
   }
 ])
 
-function getData() {
-  console.log(data.value)
-}
+const current = ref<string>('Tree Demo')
+
+const currentComponent = computed(() => {
+  return components.value.find(item => item.title === current.value)?.component
+})
+
 </script>
 
 <template>
-  <div class="title">TEST DTD</div>
-  <hr/>
-  <DragToDrop v-model="data">
-    <template #default="{ item }">
-      <div>{{ item.props?.name }}</div>
-    </template>
-    <template #ghost="{ item }">
-      <div class="ghost-custom">{{ item?.name }}</div>
-    </template>
-  </DragToDrop>
-  
-  <h1>渲染数据：</h1>
-  <div class="code">
-    <code>
-      <pre>{{ data }}</pre>
-    </code>
+  <div class="demo-root">
+    <div class="demo-menu">
+      <div class="demo-list">
+        <div class="demo-item"
+        :class="{ active: current === item.title }"
+        v-for="item in components"
+        :key="item.title">
+          <a @click="current = item.title">{{ item.title }}</a>
+        </div>
+      </div>
+    </div>
+    <div class="demo-main">
+      <component :is="currentComponent"></component>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.title {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-.ghost-custom {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 5px;
-  border-radius: 5px;
+.demo-root {
+  display: flex;
+  height: 100%;
 }
 
-.code {
-  margin-top: 20px;
-  background-color: #f0f0f0;
+.demo-menu {
+  width: 200px;
+  height: 100%;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid #f0f2f5;
+  overflow-y: auto;
+}
+
+.demo-list {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 10px;
+}
+
+.demo-item {
   padding: 10px;
+  background-color: #f0f2f5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.demo-item:hover {
+  background-color: #e8e8e8;
+}
+
+.active {
+  background-color: #e8e8e8;
+}
+
+.demo-main {
+  flex: 1;
+  height: 100%;
+  /* padding: 20px; */
+  overflow-y: auto;
 }
 </style>

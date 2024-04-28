@@ -233,7 +233,6 @@ export class Mouse {
   }
 
   public move = (e: MouseEvent) =>  {
-    e.preventDefault();
     if (this.isValidDragStart(e)) {
       this.onDragStart(e);
       this.onDragMove(e);
